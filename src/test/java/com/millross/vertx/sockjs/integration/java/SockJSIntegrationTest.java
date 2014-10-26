@@ -3,15 +3,10 @@ package com.millross.vertx.sockjs.integration.java;
 import com.millross.vertx.sockjs.SockJSVerticle;
 import org.junit.Test;
 import org.springframework.messaging.converter.StringMessageConverter;
-import org.springframework.scheduling.TaskScheduler;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.web.socket.client.jetty.JettyWebSocketClient;
 import org.springframework.web.socket.sockjs.client.SockJsClient;
 import org.springframework.web.socket.sockjs.client.Transport;
 import org.springframework.web.socket.sockjs.client.WebSocketTransport;
-import org.springframework.web.socket.sockjs.frame.Jackson2SockJsMessageCodec;
-import org.springframework.web.socket.sockjs.frame.SockJsMessageCodec;
-import org.springframework.web.socket.sockjs.transport.SockJsServiceConfig;
 import org.vertx.testtools.TestVerticle;
 
 import java.net.URI;
@@ -25,37 +20,6 @@ import static org.vertx.testtools.VertxAssert.*;
  */
 public class SockJSIntegrationTest extends TestVerticle{
 
-    private class TestSockJSServiceConfig implements SockJsServiceConfig {
-
-        private final TaskScheduler scheduler = new ThreadPoolTaskScheduler();
-        private SockJsMessageCodec codec = new Jackson2SockJsMessageCodec();
-
-        @Override
-        public TaskScheduler getTaskScheduler() {
-            return scheduler;
-        }
-
-        @Override
-        public int getStreamBytesLimit() {
-            return (128 * 1024);
-        }
-
-        @Override
-        public long getHeartbeatTime() {
-            return 25000;
-        }
-
-        @Override
-        public int getHttpMessageCacheSize() {
-            return 100;
-        }
-
-        @Override
-        public SockJsMessageCodec getMessageCodec() {
-            return codec;
-        }
-    }
-
     @Test
     public void testSockJSWithClient() throws Exception {
         List<Transport> transports = new ArrayList<>();
@@ -64,17 +28,13 @@ public class SockJSIntegrationTest extends TestVerticle{
         transports.add(new WebSocketTransport(webSocketClient));
         SockJsClient client = new SockJsClient(transports);
         URI uri = new URI("ws://" + "0.0.0.0" + ":" + 8080 + "/testsocket");
-        SockJsServiceConfig config = new TestSockJSServiceConfig();
-        SockJSTestClient testClient = new SockJSTestClient(uri, null, client);
+        SockJSTestClient testClient = new SockJSTestClient(uri, null, client, vertx, (String message) -> System.out.println(message));
         testClient.setMessageConverter(new StringMessageConverter());
+        vertx.setTimer(500, x -> testComplete());
         testClient.connect(new SockJSTestMessageHandler());
         testClient.sendTextMessage("HELLO YOU");
-        try {
-            Thread.sleep(10000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-        testComplete();
+        vertx.runOnContext(Void -> System.out.println("Hell0"));
+        vertx.runOnContext(Void -> System.out.println("Hell1"));
     }
 
     @Override
