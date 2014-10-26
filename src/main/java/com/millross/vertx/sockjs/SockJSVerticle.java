@@ -18,10 +18,10 @@ public class SockJSVerticle extends Verticle {
         SockJSServer server = vertx.createSockJSServer(httpServer);
 
         server.installApp(new JsonObject().putString("prefix", "/testsocket"), socket -> {
-            socket.write(new Buffer("HELLO"));
+            System.out.println("HELLO");
 
             socket.dataHandler(buf -> {
-                System.out.println(buf.toString());
+                System.out.println(buf.toString() + "*");
                 socket.write(new Buffer("Thankyou"));
             });
         });
